@@ -1,0 +1,406 @@
+---
+title: 在archlinux上安装nextcloud
+date: 2019-06-29
+tags:
+---
+
+= 在archlinux上安装nextcloud
+徐昊 <13521592970@126.com>
+v1.0, 2019-06-29
+:toclevels: 4
+:icons: font
+
+ifdef::backend-html5[]
+:twoinches: width='144'
+:full-width: width='100%'
+:half-width: width='50%'
+:half-size:
+:75-size: width='75%'
+:thumbnail: width='60'
+:source-highlighter: prettify
+endif::[]
+ifdef::backend-pdf[]
+:twoinches: pdfwidth='2in'
+:full-width: pdfwidth='100vw'
+:half-width: pdfwidth='50vw'
+:half-size: pdfwidth='50%'
+:75-size: pdfwidth='75%'
+:thumbnail: pdfwidth='40mm'
+:source-highlighter: coderay
+endif::[]
+ifdef::backend-docbook5[]
+:twoinches: width='50mm'
+:full-width: scaledwidth='100%'
+:half-width: scaledwidth='50%'
+:half-size: width='50%'
+:75-size: scaledwidth='75%'
+:thumbnail: width='20mm'
+:source-highlighter: coderay
+endif::[]
+
+== 第一步：更新Archlinux package repository
+
+  sudo pacman -Syu
+
+== 第二步：安装Nginx服务器
+
+  sudo pacman -S nginx-mainline
+
+通过 `systemctl` 启动
+
+  sudo systemctl start nginx
+
+By default, the above two commands will also install geoip and geoip-database package. Once it’s installed, check Nginx status.
+
+  systemctl status nginx
+
+Output:
+
+  ● nginx.service - A high performance web server and a reverse proxy server
+       Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; vendor preset: disabled)
+       Active: active (running) since Tue 2016-04-12 13:10:57 CST; 1 day 7h ago
+     Main PID: 2010 (nginx)
+        Tasks: 2 (limit: 512)
+       CGroup: /system.slice/nginx.service
+               ├─2010 nginx: master process /usr/bin/nginx -g pid /run/nginx.pid; daemon on; master_process on
+               └─2011 nginx: worker process
+
+进入到 `http://localhost` web页面可以看到欢迎界面。
+
+== 第3步 安装MariaDB服务器
+
+  sudo pacman -S mariadb
+
+You need to initialize the MariaDB data directory prior to starting the service. This can be done with mariadb-install-db command.
+
+  sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+
+Now start MariaDB.
+
+  sudo systemctl start mariadb
+
+Check if it’s running:
+
+  systemctl status mariadb
+
+Output:
+
+  ● mysqld.service - MariaDB database server
+     Loaded: loaded (/usr/lib/systemd/system/mysqld.service; disabled; vendor preset: disabled)
+     Active: active (running) since Wed 2016-04-13 21:09:45 CST; 5s ago
+    Process: 8373 ExecStartPost=/usr/bin/mysqld-post (code=exited, status=0/SUCCESS)
+   Main PID: 8372 (mysqld)
+      Tasks: 26 (limit: 512)
+     CGroup: /system.slice/mysqld.service
+             └─8372 /usr/bin/mysqld --pid-file=/run/mysqld/mysqld.pid
+
+Enable MariaDB to auto-start when Arch Linux is booted up.
+
+  sudo systemctl enable mariadb
+
+【重要】Run the post-installation security script.
+
+  sudo mysql_secure_installation
+
+== 第四步：安装php
+
+  sudo pacman -S php php-fpm
+
+After it’s installed, we need to tell Nginx to run PHP using php-fpm. To achieve that, edit /etc/nginx/nginx.conf file.
+
+  sudo nano /etc/nginx/nginx.conf
+
+Find the `location ~ \.php$` section (line 65) and modify it to the following.
+
+  location ~ \.php$ {
+              root           /usr/share/nginx/html;
+              fastcgi_pass   unix:/run/php-fpm/php-fpm.sock;
+              fastcgi_index  index.php;
+              fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+              include        fastcgi_params;
+  }
+
+Save and close the file. Then test Nginx configurations.
+
+  sudo nginx -t
+
+If the test is successful, reload Nginx.
+
+  sudo systemctl reload nginx
+
+Then start and enable php-fpm service with the following commands:
+
+  sudo systemctl start php-fpm
+  sudo systemctl enable php-fpm
+
+== 第五步：测试PHP
+
+Create a test.php file in the web root .
+
+  sudo nano /usr/share/nginx/html/test.php
+
+Add these lines to the file.
+
+  <?php
+    phpinfo();
+  ?>
+
+Save and close the file. Now in your browser address, type http://your-server-ip/test.php. You should see all your PHP info. If you are installing LEMP on your Arch Linux desktop or laptop, type `127.0.0.1/test.php` or `localhost/test.php`.
+
+The test.php file is for testing purpose only. For security reasons you can now remove it.
+
+  sudo rm /usr/share/nginx/html/test.php
+
+=== Enable PHP Extensions
+
+Edit `/etc/php/php.ini` config file.
+
+Find the following two lines (line 922 and 926), remove semicolons to enable these two extensions.
+
+  ;extension=mysqli
+  ;extension=pdo_mysql
+
+Reload php-fpm service for the changes to take effect.
+
+  sudo systemctl reload php-fpm
+
+`mysqli.so` is used to connect PHP with MariaDB/MySQL database. `pdo_mysql.so` is necessary to display Drupal sites. You may also need to enable `imagemagick` extension for PHP in order to crop and rotate images in CMS platforms such as WordPress.
+
+== 第六步：安装nextcloud服务器
+
+下载安装包，解压到 `/usr/share/nginx` 目录下
+
+  wget https://download.nextcloud.com/server/releases/nextcloud-16.0.1.zip
+
+  sudo pacman -S unzip
+
+  sudo unzip nextcloud-16.0.1.zip -d /usr/share/nginx/
+
+修改所有者
+
+  sudo chown http:http /usr/share/nginx/nextcloud/ -R
+
+== 第七步：创建数据库及数据库用户
+
+进入 mysql console
+
+  sudo mysql -u root -p
+
+创建数据库及用户
+
+  create database nextcloud;
+
+  create user nextclouduser@localhost identified by 'your-password';
+
+  grant all privileges on nextcloud.* to nextclouduser@localhost identified by 'your-password';
+
+  flush privileges;
+
+  exit;
+
+== 第八步： Enable Binary Logging in MariaDB
+
+Edit the main MariaDB server configuration file.
+
+  sudo nano /etc/my.cnf.d/server.cnf
+
+Add the following two lines below the [mysqld] line.
+
+  log-bin        = mysql-bin
+  binlog_format  = mixed
+
+== 第九步：Create an Nginx Config File for Nextcloud
+
+First, create a `conf.d` directory for individual Nginx config files.
+
+  sudo mkdir /etc/nginx/conf.d
+
+Then create a config file for Nextcloud.
+
+  sudo nano /etc/nginx/conf.d/nextcloud.conf
+
+Put the following text into the file.
+
+  server {
+      listen 80;
+      server_name nextcloud.your-domain.com;
+
+      # Add headers to serve security related headers
+      add_header X-Content-Type-Options nosniff;
+      add_header X-XSS-Protection "1; mode=block";
+      add_header X-Robots-Tag none;
+      add_header X-Download-Options noopen;
+      add_header X-Permitted-Cross-Domain-Policies none;
+
+      # Path to the root of your installation
+      root /usr/share/nginx/nextcloud/;
+
+      location = /robots.txt {
+          allow all;
+          log_not_found off;
+          access_log off;
+      }
+
+      # The following 2 rules are only needed for the user_webfinger app.
+      # Uncomment it if you're planning to use this app.
+      #rewrite ^/.well-known/host-meta /public.php?service=host-meta last;
+      #rewrite ^/.well-known/host-meta.json /public.php?service=host-meta-json
+      # last;
+
+      location = /.well-known/carddav {
+          return 301 $scheme://$host/remote.php/dav;
+      }
+      location = /.well-known/caldav {
+         return 301 $scheme://$host/remote.php/dav;
+      }
+
+      location ~ /.well-known/acme-challenge {
+        allow all;
+      }
+
+      # set max upload size
+      client_max_body_size 512M;
+      fastcgi_buffers 64 4K;
+
+      # Disable gzip to avoid the removal of the ETag header
+      gzip off;
+
+      # Uncomment if your server is build with the ngx_pagespeed module
+      # This module is currently not supported.
+      #pagespeed off;
+
+      error_page 403 /core/templates/403.php;
+      error_page 404 /core/templates/404.php;
+
+      location / {
+         rewrite ^ /index.php$uri;
+      }
+
+      location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ {
+         deny all;
+      }
+      location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) {
+         deny all;
+       }
+
+      location ~ ^/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|ocs-provider/.+|core/templates/40[34])\.php(?:$|/) {
+         include fastcgi_params;
+         fastcgi_split_path_info ^(.+\.php)(/.*)$;
+         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+         fastcgi_param PATH_INFO $fastcgi_path_info;
+         #Avoid sending the security headers twice
+         fastcgi_param modHeadersAvailable true;
+         fastcgi_param front_controller_active true;
+         fastcgi_pass unix:/run/php-fpm/php-fpm.sock;
+         fastcgi_intercept_errors on;
+         fastcgi_request_buffering off;
+      }
+
+      location ~ ^/(?:updater|ocs-provider)(?:$|/) {
+         try_files $uri/ =404;
+         index index.php;
+      }
+
+      # Adding the cache control header for js and css files
+      # Make sure it is BELOW the PHP block
+      location ~* \.(?:css|js)$ {
+          try_files $uri /index.php$uri$is_args$args;
+          add_header Cache-Control "public, max-age=7200";
+          # Add headers to serve security related headers (It is intended to
+          # have those duplicated to the ones above)
+          add_header X-Content-Type-Options nosniff;
+          add_header X-XSS-Protection "1; mode=block";
+          add_header X-Robots-Tag none;
+          add_header X-Download-Options noopen;
+          add_header X-Permitted-Cross-Domain-Policies none;
+          # Optional: Don't log access to assets
+          access_log off;
+     }
+
+     location ~* \.(?:svg|gif|png|html|ttf|woff|ico|jpg|jpeg)$ {
+          try_files $uri /index.php$uri$is_args$args;
+          # Optional: Don't log access to other assets
+          access_log off;
+     }
+  }
+
+将 `server_name` 改对
+
+比如对于本地ip访问
+
+  server_name 192.168.1.3
+
+编辑 `/etc/nginx/nginx.conf` 文件
+
+  sudo nano /etc/nginx/nginx.conf
+
+Add the following line in the http section so that individual Nginx config files will be loaded.
+
+  include /etc/nginx/conf.d/*.conf;
+
+Like this:
+
+  http {
+     include /etc/nginx/conf.d/*.conf;
+
+     include mime.types;
+     default_type application/octet-stream;
+
+  .....
+
+
+在`http` block中添加这一行
+
+  types_hash_max_size 4096;
+
+像这样：
+
+  http {
+      include       mime.types;
+      default_type  application/octet-stream;
+      types_hash_max_size 4096;
+
+      #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+      #                  '$status $body_bytes_sent "$http_referer" '
+      #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+      ...
+
+Save and close the file. Then test Nginx configurations.
+
+  sudo nginx -t
+
+
+If the test is successful, reload Nginx for the changes to take effect.
+
+  sudo systemctl reload nginx
+
+== Install and Enable PHP Modules
+
+Nextcloud requires `mysql`, `gd`, `zip` and `curl` modules to be enabled in order to work properly. mysql module is already installed in the previous LEMP tutorial. Now install gd module with the following command:
+
+  sudo pacman -S php-gd
+
+Then edit `php.ini` file.
+
+  sudo nano /etc/php/php.ini
+
+Find the following 5 lines (There are on about line 900). Remove the semicolons to enable these 5 modules.
+
+  ;extension=mysqli
+  ;extension=pdo_mysql
+  ;extension=gd
+  ;extension=zip
+  ;extension=curl
+
+Save and close the file. Then reload php-fpm process for the changes to take effect.
+
+  sudo systemctl reload php-fpm
+
+== Restore MySQL 数据库
+
+  mysql -h [server] -u [username] -p[password] [db_name] < nextcloud-sqlbkp.bak
+
+== 访问nextcloud去进行配置
+
+

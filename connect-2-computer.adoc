@@ -1,0 +1,67 @@
+---
+title: 用网线将两台计算机直连，通过ssh和dd进行磁盘备份。
+date: 2019-06-26
+tags:
+---
+
+= 用网线将两台计算机直连，通过ssh和dd进行磁盘备份。
+徐昊 <13521592970@126.com>
+v1.0, 2019-06-26
+//:toclevels: 4
+//:toc: left
+:icons: font
+
+ifdef::backend-html5[]
+:twoinches: width='144'
+:full-width: width='100%'
+:half-width: width='50%'
+:half-size:
+:75-size: width='75%'
+:thumbnail: width='60'
+:source-highlighter: prettify
+endif::[]
+ifdef::backend-pdf[]
+:twoinches: pdfwidth='2in'
+:full-width: pdfwidth='100vw'
+:half-width: pdfwidth='50vw'
+:half-size: pdfwidth='50%'
+:75-size: pdfwidth='75%'
+:thumbnail: pdfwidth='40mm'
+:source-highlighter: coderay
+endif::[]
+ifdef::backend-docbook5[]
+:twoinches: width='50mm'
+:full-width: scaledwidth='100%'
+:half-width: scaledwidth='50%'
+:half-size: width='50%'
+:75-size: scaledwidth='75%'
+:thumbnail: width='20mm'
+:source-highlighter: coderay
+endif::[]
+
+
+参考 https://unix.stackexchange.com/questions/238132/direct-connection-w-ethernet-cable
+
+* 用网线将两台计算机连接起来，不需要交叉双绞线
+
+* 设定静态ip地址，请将 `enp2s0` 换成你实际的网卡名称
+
+  sudo ip addr add 10.0.0.2/32 dev enp2s0
+
+* 添加路由项，请将 `enp2s0` 换成你实际的网卡名称
+
+  sudo ip route add 10.0.0.1/32 dev enp2s0
+
+* 由于我们会用到root权限，所以我这里用root进行ssh登录，但安全起见我们不使用密码登录，而是使用公私钥的方式登录。
+
+* 本地生成一对公私钥匙，会询问私钥存储在哪里(文件名)，我保存为了 `$HOME/.ssh/hao_nas_key_root` 文件
+
+  ssh-keygen
+
+* 将公钥拷贝到服务器上，注意这一步的登录需要暂时地启用密码登录
+
+  ssh-copy-id -i .ssh/hao_nas_key_root.pub root@10.0.0.1 -p 27742
+
+* 进行磁盘备份
+
+  sudo dd bs=4M status=progress if=/dev/md126| ssh root@10.0.0.1 -p 27742 -i .ssh/hao_nas_key_root dd of=/dev/nvme0n1

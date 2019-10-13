@@ -1,0 +1,10 @@
+toor
+admin
+administrator
+pass failure
+password
+crypto
+123456
+12345678
+passwd
+
