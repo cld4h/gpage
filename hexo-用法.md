@@ -123,6 +123,35 @@ mathjax: true
 ---
 ```
 
+### git 同步
+
+主要内容在 `_posts` 目录下，可以创建软链接到其他目录。
+
+先 `git init` 建立一个本地仓库，再push到远程仓库：
+
+```sh
+git remote add origin git@github.com:<username>/<repository>.git
+git push -u origin master
+```
+
+或者直接`git clone`
+
+#### push源码的同时同步到github pages 上
+
+我目前暂时用了一下 `pre-push` hook (在 `.git/hook` 下添加`pre-push` 文件)
+
+```sh
+
+#!/bin/sh
+# publish github pages while push the source to github
+
+hexo --cwd=/home/hao/cld4h.github.io g -d
+
+exit 0
+```
+
+`--cwd` 选项设置hexo的工作目录
+
 ## Quick Start
 
 ### Create a new post
