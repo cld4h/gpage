@@ -1,5 +1,5 @@
 ---
-title: 在archlinux上安装nextcloud
+title: LaTeX 笔记
 date: 2019-10-21
 tags:
 ---
