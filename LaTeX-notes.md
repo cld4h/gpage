@@ -25,3 +25,9 @@ figure 环境示例：
 ```tex
 \setbeamertemplate{caption}[numbered]
 ```
+
+## 从markdown编译Beamer presentation
+
+```
+pandoc talk.md -t beamer -o talk.pdf --pdf-engine=xelatex -V mainfont=思源宋体
+```
