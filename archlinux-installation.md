@@ -575,5 +575,5 @@ sudo pacman -S feh variety
 sudo pacman -S compton
 ```
 
-alacritty: `.config/alacritty/config.yml` 设置 `ocacity`
+alacritty: `.config/alacritty/config.yml` 设置 `opacity`
 

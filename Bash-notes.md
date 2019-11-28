@@ -1,5 +1,5 @@
 ---
-title: hexo 的配置及使用
+title: Bash notes
 date: 2019-11-27
 tags:
 ---
