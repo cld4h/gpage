@@ -36,4 +36,7 @@ export PS1="\[$(tput bold)\]\[$(tput setaf 1)\][\[$(tput setaf 3)\]\u\[$(tput se
 
 # 我的 `.profile` 配置记录
 
+# dotfile repositorys
+
+https://www.atlassian.com/git/tutorials/dotfiles
 
