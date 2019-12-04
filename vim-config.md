@@ -31,3 +31,17 @@ endif
 a<C-R>=strftime("%c")<CR><Esc>
 ```
 
+应用如将 `F2` 键映射为输入hexo文档信息
+
+```
+nmap <F2> a---<CR>title: <++><CR>date: <C-R>=strftime("%Y-%m-%d")<CR><CR>---<CR><Esc>
+```
+
+其效果如下:
+
+```md
+---
+title: <++>
+date: 2019-12-04
+---
+```
