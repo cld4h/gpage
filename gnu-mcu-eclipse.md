@@ -65,9 +65,9 @@ xpm install --global @xpack-dev-tools/qemu-arm@latest
 git clone https://github.com/xpack-dev-tools/qemu-eclipse-test-projects
 ```
 
-将 `arm-none-eabi-g++` 和 arm-none-eabi-gcc` 的路径加入到 `PATH` 中
+将 `arm-none-eabi-g++` 和 `arm-none-eabi-gcc` 的路径加入到 `PATH` 中
 
-以 `NUCLEO-F103RB` 为例，运行
+以 `NUCLEO-F103RB` 开发板为例，在 `Debug` 目录下运行
 
 ```sh
 qemu-system-gnuarmeclipse -board NUCLEO-F103RB --image ncl-f103-blink.elf
