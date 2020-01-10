@@ -13,3 +13,11 @@ PS1+="$\[(tput setaf 71)\]\W -> "
 PS1+="$\[(tput sgr0)\]"	#end color setting
 ```
 
+## man pages
+
+搜索时，输入全部为小写时进行大小写不敏感的搜索。
+如：
+
+* `/invoc` : 大小写不敏感
+* `/Invoc` : 大小写敏感
+* `/INVOC` : 大小写敏感

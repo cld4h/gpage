@@ -504,6 +504,12 @@ fcitx &
 ```
 或在 i3配置文件中添加 `exec_always fcitx`
 
+### 安装 virtualbox
+
+```
+sudo pacman -S linux-headers virtualbox virtualbox-guest-iso
+```
+
 ### 修改键位
 
 #### 使用 `xmodmap`
