@@ -21,3 +21,18 @@ PS1+="$\[(tput sgr0)\]"	#end color setting
 * `/invoc` : 大小写不敏感
 * `/Invoc` : 大小写敏感
 * `/INVOC` : 大小写敏感
+
+## other
+
+通过ffmpeg批量转换视频封装格式：mkv to mp4
+[参考](https://gist.github.com/jamesmacwhite/58aebfe4a82bb8d645a797a1ba975132)
+
+```sh
+for f in *.mkv; do ffmpeg -i "$f" -c copy "${f%.mkv}.mp4"; done
+```
+
+在 windows 下
+
+```bat
+for /R %f IN (*.mkv) DO ffmpeg -i "%f" -c copy "%~nf.mp4"
+```
