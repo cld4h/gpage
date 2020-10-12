@@ -1,5 +1,5 @@
 ---
-title: Bash notes
+title: Wacom
 date: 2020-10-12
 tags:
 ---
